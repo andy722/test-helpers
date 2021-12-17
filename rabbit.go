@@ -6,7 +6,10 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"time"
 )
+
+var WaitFor = 10 * time.Second
 
 type RabbitContainerOptions struct {
 	Image string
@@ -47,7 +50,7 @@ func NewRabbitContainer(opts *RabbitContainerOptions, s *suite.Suite, ctx contex
 
 	adminPort, err := rabbit.MappedPort(rabbit.ctx, "15672/tcp")
 	rabbit.Require().NoError(err)
-	rabbit.adminUri = fmt.Sprintf("http://guest:guest@%s:%d", rabbit.host, adminPort.Int())
+	rabbit.adminUri = fmt.Sprintf("http://guest:guest@%s:%d/api", rabbit.host, adminPort.Int())
 
 	admin, err := NewRabbitAdmin(rabbit.GetAdminUri())
 	s.Require().NoError(err)
@@ -85,6 +88,31 @@ func (rabbit *RabbitContainer) DumpAll(queue string) (result []map[string]interf
 	}
 }
 
+// AwaitMessages consumes messages from queue until either the specified count messages received or timeout elapses
+func (rabbit *RabbitContainer) AwaitMessages(queue string, count int) (result []map[string]interface{}) {
+	for start := time.Now(); time.Since(start) < WaitFor; {
+		result = append(result, rabbit.DumpAll(queue)...)
+
+		if len(result) >= count {
+			return result
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	return result
+}
+
 func (rabbit *RabbitContainer) Purge(queue string) {
 	rabbit.NoError(rabbit.admin.Purge(queue, "/"))
+}
+
+func (rabbit *RabbitContainer) GetQueue(queue string) *QueueInfo {
+	rc, err := rabbit.admin.GetQueue(queue, "/")
+	rabbit.NoError(err)
+	return rc
+}
+
+func (rabbit *RabbitContainer) Publish(rk string, body string) {
+	err := rabbit.admin.Publish(rk, "/", body)
+	rabbit.NoError(err)
 }

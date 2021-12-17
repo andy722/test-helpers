@@ -25,3 +25,7 @@ func newContainerBase(suite *suite.Suite, container testcontainers.Container, ct
 		host:      host,
 	}
 }
+
+func (c *containerBase) Stop() {
+	c.NoError(c.Container.Terminate(c.ctx))
+}
