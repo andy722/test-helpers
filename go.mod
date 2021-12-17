@@ -1,4 +1,4 @@
-module test-helpers
+module github.com/andy722/test-helpers
 
 go 1.17
 
