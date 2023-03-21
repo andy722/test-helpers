@@ -112,6 +112,12 @@ func (rabbit *RabbitContainer) GetQueue(queue string) *QueueInfo {
 	return rc
 }
 
+func (rabbit *RabbitContainer) ListQueues() []QueueInfo {
+	rc, err := rabbit.admin.ListQueues()
+	rabbit.NoError(err)
+	return rc
+}
+
 func (rabbit *RabbitContainer) Publish(rk string, body string) {
 	err := rabbit.admin.Publish(rk, "/", body)
 	rabbit.NoError(err)

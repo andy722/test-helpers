@@ -139,6 +139,23 @@ func (admin *RabbitAdmin) GetQueue(queue string, vhost string) (*QueueInfo, erro
 	return &respObj, nil
 }
 
+func (admin *RabbitAdmin) ListQueues() ([]QueueInfo, error) {
+	resp, err := admin.doGet("/queues")
+	if err != nil {
+		return nil, err
+	}
+
+	//goland:noinspection GoUnhandledErrorResult
+	defer resp.Body.Close()
+
+	var respObj = []QueueInfo{}
+	if err := json.NewDecoder(resp.Body).Decode(&respObj); err != nil {
+		return nil, err
+	}
+
+	return respObj, nil
+}
+
 func (admin *RabbitAdmin) Publish(rk string, vhost string, body string) error {
 	type publishRequestProperties struct {
 		DeliveryMode int                    `json:"delivery_mode"`
